@@ -39,3 +39,5 @@ To use this in the most effective way use CKQueryOperation when downloading your
 
 
 Cheers. 
+
+     ![]http://i.imgur.com/GMfmOsS.gif
