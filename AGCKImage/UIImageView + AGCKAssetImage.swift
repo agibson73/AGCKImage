@@ -46,7 +46,7 @@ extension UIImageView{
     func agCKImageAssetWithPlaceHolder(recordID:CKRecordID,assetKey:String,placeHolder:UIImage?){
         downloadAssetImage(placeHolder, shouldRefresh: false, recordID: recordID, assetKey: assetKey, ckProgress: {progress,finished in})
     }
-    func agCKImageAssetWithCacheForIDReset(recordID:CKRecordID,assetKey:String){
+    func agCKImageAssetWithResetCacheForID(recordID:CKRecordID,assetKey:String){
         downloadAssetImage(nil, shouldRefresh: true, recordID: recordID, assetKey: assetKey, ckProgress: {progress,finished in})
     }
     
@@ -57,7 +57,7 @@ extension UIImageView{
         })
        
     }
-    func agCKImageAssetWithProgressWithCacheForIDReset(recordID:CKRecordID,assetKey:String,ckProgress:(progress:Double!,finished:Bool!)->Void){
+    func agCKImageAssetWithProgressWithResetCacheForID(recordID:CKRecordID,assetKey:String,ckProgress:(progress:Double!,finished:Bool!)->Void){
         downloadAssetImage(nil, shouldRefresh: true, recordID: recordID, assetKey: assetKey, ckProgress: {progress,finished in
             ckProgress(progress: progress, finished: finished)
         })
