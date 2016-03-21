@@ -41,3 +41,14 @@ To use this in the most effective way use CKQueryOperation when downloading your
 Cheers. 
 
 ![](http://i.imgur.com/GMfmOsS.gif)
+
+
+
+Other Functions To set images from Cloudkit:
+          agCKImageAssetWithPlaceHolder(recordID:CKRecordID,assetKey:String,placeHolder:UIImage?)
+          agCKImageAssetWithResetCacheForID(recordID:CKRecordID,assetKey:String)
+          agCKImageAssetWithProgress(recordID:CKRecordID,assetKey:String,ckProgress:(progress:Double!,finished:Bool!)->Void)
+          agCKImageAssetWithProgressWithResetCacheForID(recordID:CKRecordID,assetKey:String,ckProgress:(progress:Double!,finished:Bool!)->Void)
+          
+          
+          
