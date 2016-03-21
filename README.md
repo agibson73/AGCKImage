@@ -9,10 +9,9 @@ Use: On any imageview
 
     imageView.agCKImageAsset(post.recordID, assetKey: "image")
 
-There are also methods for refresh cache for recordID,download with progress, and download with placeholders.  The cache is automatically set up to clean cache older than 2 days but this can be easily changed.
+There are also methods for refresh cache for recordID,download with progress, and download with placeholders.  The cache is automatically set up to clean files older than 2 days but this can be easily changed.
 
     
 Using CloudKit this way allows for faster operations because you never have to include the assets in the desired keys. Also since CloudKit assets downloaded in the traditional methods are not guaranteed to persist or have the same names this simplifies the process. 
 
-
-
+To use this in the most effective way use CKQueryOperation when downloading your records. Use the .desiredKeys property and exclude the asset keys. This means speedier downloads. Then use the methods provided on the imageviews to fetch assets when needed. Cheers. 
