@@ -8,6 +8,14 @@ Use: On any imageview pass the recordID of the record and the property key for t
 
     imageView.agCKImageAsset(post.recordID, assetKey: "image")
 
+
+Other Functions To set CKAssets from Cloudkit:
+          agCKImageAssetWithPlaceHolder(recordID:CKRecordID,assetKey:String,placeHolder:UIImage?)
+          agCKImageAssetWithResetCacheForID(recordID:CKRecordID,assetKey:String)
+          agCKImageAssetWithProgress(recordID:CKRecordID,assetKey:String,ckProgress:(progress:Double!,finished:Bool!)->Void)
+          agCKImageAssetWithProgressWithResetCacheForID(recordID:CKRecordID,assetKey:String,ckProgress:(progress:Double!,finished:Bool!)->Void)
+          
+          
 There are also methods for refresh cache for recordID,download with progress, and download with placeholders.  The cache is automatically set up to clean files older than 2 days but this can be easily changed.
 
     
@@ -43,13 +51,9 @@ Cheers.
 
 ![](http://i.imgur.com/GMfmOsS.gif)
 
+Also included is a download to cache in the backround.
 
 
-Other Functions To set images from Cloudkit:
-          agCKImageAssetWithPlaceHolder(recordID:CKRecordID,assetKey:String,placeHolder:UIImage?)
-          agCKImageAssetWithResetCacheForID(recordID:CKRecordID,assetKey:String)
-          agCKImageAssetWithProgress(recordID:CKRecordID,assetKey:String,ckProgress:(progress:Double!,finished:Bool!)->Void)
-          agCKImageAssetWithProgressWithResetCacheForID(recordID:CKRecordID,assetKey:String,ckProgress:(progress:Double!,finished:Bool!)->Void)
           
           
           
