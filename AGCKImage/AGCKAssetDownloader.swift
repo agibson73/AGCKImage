@@ -58,7 +58,7 @@ class AGCKAssetDownloader: NSObject {
                     completion(data:nil)
                 }
             }
-        CKContainer.defaultContainer().addOperation(operation)
+        CKContainer.defaultContainer().publicCloudDatabase.addOperation(operation)
     }
     
     class func downloadVideoInBackGround(assetKey:String,recordID:CKRecordID,completion:(Bool!,path:String!)->Void){
