@@ -42,21 +42,18 @@ class AGCKAssetCache: NSObject {
         
     }
     
-    func setUp(){
+    func setUp() {
         ioQueue = dispatch_queue_create("com.iosAssasin", DISPATCH_QUEUE_SERIAL)
         cache = NSCache()
-        fileManager = NSFileManager.defaultManager()
-        createFolderForCKCache()
-        let sem = dispatch_semaphore_create(0)
-        
-        // Clean cache older than 2 days.  Can be changed
-        autoCleanFilesOlderThan(2, completion: {finished in
-            dispatch_semaphore_signal(sem)
+        dispatch_sync(ioQueue, {
+            self.fileManager = NSFileManager()
         })
-        dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+        self.createFolderForCKCache()
         
         // Respond to memory warnings
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "removeAllCache", name: UIApplicationDidReceiveMemoryWarningNotification, object: nil)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(AGCKAssetCache.removeAllCache), name: UIApplicationDidReceiveMemoryWarningNotification, object: nil)
+        
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(AGCKAssetCache.autoCleanFilesOlderThan1Week), name: UIApplicationDidEnterBackgroundNotification, object: nil)
         
     }
     
@@ -68,23 +65,23 @@ class AGCKAssetCache: NSObject {
     }
     
     // always check Cache First for speed
-    func doesAssetCacheExistForRecordID(recordID:String)->Bool{
-        if cache.objectForKey(recordID) != nil{
+    func doesAssetCacheExistForRecordID(recordID:String)->Bool {
+        if cache.objectForKey(recordID) != nil {
             return true
         }
         return false
     }
     
-    func doesAssetExistInCacheDirecory(recordName:String)->Bool{
+    func doesAssetExistInCacheDirecory(recordName: String)->Bool {
         return fileManager.fileExistsAtPath(self.pathForAsset(recordName))
     }
     
-    func addAssetImageToCache(recordName:String,image:UIImage){
+    func addAssetImageToCache(recordName: String, image: UIImage) {
         
-        if doesAssetCacheExistForRecordID(recordName) == false{
+        if doesAssetCacheExistForRecordID(recordName) == false {
             cache.setObject(image, forKey: recordName)
         }
-        if doesAssetExistInCacheDirecory(recordName) == false{
+        if doesAssetExistInCacheDirecory(recordName) == false {
             dispatch_async(self.ioQueue, {
                 let data = UIImageJPEGRepresentation(image, 1)
                 data!.writeToFile(self.pathForAsset(recordName), atomically: true)
@@ -92,47 +89,47 @@ class AGCKAssetCache: NSObject {
         }
         
     }
-    func doesCacheImageExistForKey(recordName:String)->Bool{
-        if doesAssetCacheExistForRecordID(recordName) == true{
+    func doesCacheImageExistForKey(recordName: String)->Bool {
+        if doesAssetCacheExistForRecordID(recordName) == true {
             return true
-        }else if doesAssetExistInCacheDirecory(recordName) == true{
+        } else if doesAssetExistInCacheDirecory(recordName) == true {
             return true
         }
         return false
     }
     
-    func retrieveImageFromCache(recordName:String)->UIImage!{
-        if doesAssetCacheExistForRecordID(recordName) == true{
+    func retrieveImageFromCache(recordName: String)->UIImage! {
+        if doesAssetCacheExistForRecordID(recordName) == true {
             return cache.objectForKey(recordName) as? UIImage
-        }else if doesAssetExistInCacheDirecory(recordName) == true{
+        } else if doesAssetExistInCacheDirecory(recordName) == true {
             dispatch_async(self.ioQueue, {
                 self.cache.setObject(UIImage(data: NSData(contentsOfURL: self.localUrlForAsset(recordName))!)!, forKey: recordName)
             })
             
             return UIImage(data: NSData(contentsOfURL: self.localUrlForAsset(recordName))!)
-        }else{
+        } else {
             return nil
         }
         
     }
-
-    func localUrlForAsset(recordName:String)->NSURL!{
+    
+    func localUrlForAsset(recordName:String)->NSURL! {
         return  NSURL(fileURLWithPath: self.pathForAsset(recordName))
     }
     
-    func pathForAsset(recordName:String)->String{
+    func pathForAsset(recordName:String)->String {
         let paths = NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true)
         let documentDirectory = paths[0] as String
         let myFilePath = documentDirectory.stringByAppendingPathComponent("/ckCache/\(recordName).media")
         return myFilePath
     }
     
-    func createFolderForCKCache(){
+    func createFolderForCKCache() {
         let documentDirectoryPath: String = NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true).first!
         let agCkCache = documentDirectoryPath.stringByAppendingPathComponent("/ckCache")
         if !fileManager.fileExistsAtPath(agCkCache) {
             do {
-                try NSFileManager.defaultManager().createDirectoryAtPath(agCkCache, withIntermediateDirectories: false, attributes: nil)
+                try self.fileManager.createDirectoryAtPath(agCkCache, withIntermediateDirectories: false, attributes: nil)
                 
             } catch let createDirectoryError as NSError {
                 print("Error with creating directory at path: \(createDirectoryError.localizedDescription)")
@@ -141,68 +138,64 @@ class AGCKAssetCache: NSObject {
         }
     }
     
-    func showFilesInCache(){
+    func showFilesInCache() {
         let documentDirectoryPath: String = NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true).first!
         let cachePaths = fileManager.subpathsAtPath(documentDirectoryPath)
-        if let _ = cachePaths{
-            for path in cachePaths!{
+        if cachePaths != nil {
+            for path in cachePaths! {
                 print("path \(path)")
-                
             }
         }
-        
     }
     
-    func removeAssetFromCache(recordName:String){
+    func removeAssetFromCache(recordName:String) {
         // remove from cache
         cache.removeObjectForKey(recordName)
         //remove from disk memory
         
-        if doesAssetExistInCacheDirecory(recordName) == true{
+        if doesAssetExistInCacheDirecory(recordName) == true {
             let path = self.pathForAsset(recordName)
-            do{
+            do {
                 try fileManager.removeItemAtPath(path)
-            }catch let error{
+            }catch let error {
                 print("not removed \(error)")
             }
         }
-
     }
     
-
-    func removeItemAtURL(url:NSURL){
+    func removeItemAtURL(url:NSURL) {
         let path = url.path!
-        if fileManager.fileExistsAtPath(path) == true{
-            do{
+        if fileManager.fileExistsAtPath(path) == true {
+            do {
                 try fileManager.removeItemAtPath(path)
-            }catch let error{
+            }catch let error {
                 print("not removed \(error)")
             }
         }
     }
     
-    func purgeCache(){
+    func purgeCache() {
         let documentDirectoryPath: String = NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true).first!
         let agCkCache = documentDirectoryPath.stringByAppendingPathComponent("/ckCache")
         
-        do{
+        do {
             try fileManager.removeItemAtPath(agCkCache)
             createFolderForCKCache()
-        }catch let error{
+        }catch let error {
             print("not removed \(error)")
         }
     }
     
-    func purgeCacheInBackGround(completion:(success:Bool)->Void){
+    func purgeCacheInBackGround(completion:(success:Bool)->Void) {
         dispatch_async(self.ioQueue, {
             let documentDirectoryPath: String = NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true).first!
             let agCkCache = documentDirectoryPath.stringByAppendingPathComponent("/ckCache")
             
-            do{
+            do {
                 try self.fileManager.removeItemAtPath(agCkCache)
                 self.createFolderForCKCache()
                 completion(success: true)
-            }catch let error{
+            }catch let error {
                 print("not removed \(error)")
                 completion(success: false)
             }
@@ -210,16 +203,16 @@ class AGCKAssetCache: NSObject {
         
     }
     
-    func cacheAgeOfAsset(recordName:String)->NSDate!{
+    func cacheAgeOfAsset(recordName:String)->NSDate! {
         
         let path = self.pathForAsset(recordName)
-        if doesAssetExistInCacheDirecory(recordName) == true{
-            do{
+        if doesAssetExistInCacheDirecory(recordName) == true {
+            do {
                 let attrs = try fileManager.attributesOfItemAtPath(path)
-                guard let date = attrs[NSFileCreationDate] as? NSDate else{return nil}
+                guard let date = attrs[NSFileCreationDate] as? NSDate else {return nil}
                 return date
-
-            }catch let error{
+                
+            }catch let error {
                 print("Error reading attributes \(error)")
                 return nil
             }
@@ -228,14 +221,14 @@ class AGCKAssetCache: NSObject {
         return nil
     }
     
-    func cacheAgeItemAtPath(path:String)->NSDate!{
+    func cacheAgeItemAtPath(path:String)->NSDate! {
         // lets get the age
-        do{
+        do {
             let attrs = try fileManager.attributesOfItemAtPath(path)
-            guard let date = attrs[NSFileCreationDate] as? NSDate else{return nil}
+            guard let date = attrs[NSFileCreationDate] as? NSDate else {return nil}
             return date
             
-        }catch let error{
+        }catch let error {
             print("Error reading attributes \(error)")
             return nil
         }
@@ -243,61 +236,94 @@ class AGCKAssetCache: NSObject {
     }
     
     // call this when entering the background to clean cache
-    func autoCleanFilesOlderThan(daysAgo:Double){
-         dispatch_async(self.ioQueue, {
-        let timeInterval = daysAgo * 12 * 60 * 60
-        let documentDirectoryPath: String = NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true).first!
-        let agCkCache = documentDirectoryPath.stringByAppendingPathComponent("/ckCache")
-        let cachePaths = self.fileManager.subpathsAtPath(agCkCache)
-        guard let _ = cachePaths else{return}
-            for path in cachePaths!{
-                print(path)
-                if self.cacheAgeItemAtPath(agCkCache + "/" + path) != nil{
-                    let date = self.cacheAgeItemAtPath(agCkCache + "/" + path)
-                   // print("\(NSDate().timeIntervalSinceDate(date)) and timeInterval is \(timeInterval)")
-                    if NSDate().timeIntervalSinceDate(date) > timeInterval{
-                        print("Creation Date is \(date)")
-                        
-                        do{
-                            try self.fileManager.removeItemAtPath(agCkCache + "/" + path)
-                        }catch let error{
-                            print("not removed \(error)")
-                        }
-                        
-                    }
-                }
-
-            }
-        })
-    }
-    
-    // call this when entering the background to clean cache
-    func autoCleanFilesOlderThan(daysAgo:Double,completion:(finished:Bool)->Void){
+    func autoCleanFilesOlderThan(daysAgo:Double) {
         dispatch_async(self.ioQueue, {
             let timeInterval = daysAgo * 12 * 60 * 60
             let documentDirectoryPath: String = NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true).first!
             let agCkCache = documentDirectoryPath.stringByAppendingPathComponent("/ckCache")
             let cachePaths = self.fileManager.subpathsAtPath(agCkCache)
-            guard let _ = cachePaths else{completion(finished: true); return}
-            for path in cachePaths!{
-                if self.cacheAgeItemAtPath(agCkCache + "/" + path) != nil{
+            guard let _ = cachePaths else {return}
+            for path in cachePaths! {
+                print(path)
+                if self.cacheAgeItemAtPath(agCkCache + "/" + path) != nil {
                     let date = self.cacheAgeItemAtPath(agCkCache + "/" + path)
-                    if NSDate().timeIntervalSinceDate(date) > timeInterval{
-                        do{
+                    // print("\(NSDate().timeIntervalSinceDate(date)) and timeInterval is \(timeInterval)")
+                    if NSDate().timeIntervalSinceDate(date) > timeInterval {
+                        print("Creation Date is \(date)")
+                        
+                        do {
                             try self.fileManager.removeItemAtPath(agCkCache + "/" + path)
-                        }catch let error{
+                        }catch let error {
+                            print("not removed \(error)")
+                        }
+                        
+                    }
+                }
+                
+            }
+        })
+    }
+    
+    // call this when entering the background to clean cache
+    func autoCleanFilesOlderThan1Week() {
+        dispatch_async(self.ioQueue, {
+            let timeInterval = 7 * 12 * 60 * 60
+            let documentDirectoryPath: String = NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true).first!
+            let agCkCache = documentDirectoryPath.stringByAppendingPathComponent("/ckCache")
+            let cachePaths = self.fileManager.subpathsAtPath(agCkCache)
+            guard let _ = cachePaths else {return}
+            for path in cachePaths! {
+                print(path)
+                if self.cacheAgeItemAtPath(agCkCache + "/" + path) != nil {
+                    let date = self.cacheAgeItemAtPath(agCkCache + "/" + path)
+                    // print("\(NSDate().timeIntervalSinceDate(date)) and timeInterval is \(timeInterval)")
+                    if NSDate().timeIntervalSinceDate(date) > Double(timeInterval) {
+                        print("Creation Date is \(date)")
+                        
+                        do {
+                            try self.fileManager.removeItemAtPath(agCkCache + "/" + path)
+                        }catch let error {
+                            print("not removed \(error)")
+                        }
+                        
+                    }
+                }
+                
+            }
+        })
+    }
+    
+    // call this when entering the background to clean cache
+    func autoCleanFilesOlderThan(daysAgo:Double, completion:(finished:Bool)->Void) {
+        dispatch_async(self.ioQueue, {
+            let timeInterval = daysAgo * 12 * 60 * 60
+            let documentDirectoryPath: String = NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true).first!
+            let agCkCache = documentDirectoryPath.stringByAppendingPathComponent("/ckCache")
+            let cachePaths = self.fileManager.subpathsAtPath(agCkCache)
+            guard let _ = cachePaths else {completion(finished: true); return}
+            for path in cachePaths! {
+                if self.cacheAgeItemAtPath(agCkCache + "/" + path) != nil {
+                    let date = self.cacheAgeItemAtPath(agCkCache + "/" + path)
+                    if NSDate().timeIntervalSinceDate(date) > timeInterval {
+                        do {
+                            try self.fileManager.removeItemAtPath(agCkCache + "/" + path)
+                        }catch let error {
                             print("not removed \(error)")
                         }
                         
                     }
                 }
             }
-            completion(finished: true)
-
+            dispatch_async(dispatch_get_main_queue(), {
+                completion(finished: true)
+            })
+            
+            
         })
     }
     
-    deinit{
+    deinit {
         NSNotificationCenter.defaultCenter().removeObserver(self, name: UIApplicationDidReceiveMemoryWarningNotification, object: nil)
+        NSNotificationCenter.defaultCenter().removeObserver(self,name: UIApplicationDidEnterBackgroundNotification,object: nil)
     }
 }
