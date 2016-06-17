@@ -48,7 +48,7 @@ To use this in the most effective way use CKQueryOperation when downloading your
 
 Cheers. 
 
-![AGCKImage Demo](http://i.imgur.com/GMfmOsS.gif)
+[Imgur](http://i.imgur.com/GMfmOsS.gifv)
 
 
 Also included is a download to cache in the backround.
