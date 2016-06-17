@@ -1,4 +1,3 @@
-# AGCKImage
 AGCKImage is an easy to use framework to deal with CloudKit Image CKAsset. 
 
 
@@ -49,7 +48,7 @@ To use this in the most effective way use CKQueryOperation when downloading your
 
 Cheers. 
 
-![](http://i.imgur.com/GMfmOsS.gif)
+![AGCKImage Demo](http://i.imgur.com/GMfmOsS.gif)
 
 Also included is a download to cache in the backround.
 
