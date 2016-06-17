@@ -48,8 +48,9 @@ To use this in the most effective way use CKQueryOperation when downloading your
 
 
 Cheers. 
+[[ http://i.imgur.com/GMfmOsS.gif | height = 100px ]]
 
-![](http://i.imgur.com/GMfmOsS.gif)
+
 
 
 Also included is a download to cache in the backround.
