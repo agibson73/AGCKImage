@@ -26,69 +26,69 @@ import CloudKit
 class AGCKAssetDownloader: NSObject {
     
    
-    class func createAGCKAssetOperation(recordID:CKRecordID,assetKey:String)->CKFetchRecordsOperation{
+    class func createAGCKAssetOperation(_ recordID:CKRecordID,assetKey:String)->CKFetchRecordsOperation{
         let operation = CKFetchRecordsOperation(recordIDs: [recordID])
         operation.desiredKeys = [assetKey]
-        operation.qualityOfService = .UserInitiated
+        operation.qualityOfService = .userInitiated
         return operation
     }
 
     // just an extra function for dowloading with data returned and added to cache
-    class func downloadAsset(recordID:CKRecordID,assetKey:String,completion:(data:NSData!)->Void){
+    class func downloadAsset(_ recordID:CKRecordID,assetKey:String,completion:@escaping (_ data:Data?)->Void){
         let operation = CKFetchRecordsOperation(recordIDs: [recordID])
         
         operation.desiredKeys = [assetKey]
-        operation.qualityOfService = .UserInitiated
+        operation.qualityOfService = .userInitiated
         
         
         operation.perRecordCompletionBlock = {
             record,recordID,error in
             if let _ = record{
-                guard let asset = record!.valueForKey(assetKey) as? CKAsset else{completion(data: nil); return}
+                guard let asset = record!.value(forKey: assetKey) as? CKAsset else{completion(nil); return}
                 
                     let url = asset.fileURL
-                    let imageData = NSData(contentsOfFile: url.path!)!
+                    let imageData = try! Data(contentsOf: URL(fileURLWithPath: url.path))
                     let ckImage = UIImage(data: imageData)
-                guard let _ = ckImage else{completion(data: nil); return}
+                guard let _ = ckImage else{completion(nil); return}
                         // add to cache
                         AGCKAssetCache.defaultManager.addAssetImageToCache(recordID!.recordName, image: ckImage!)
-                        completion (data: imageData)
+                        completion (imageData)
                     
                 }else{
-                    completion(data:nil)
+                    completion(nil)
                 }
             }
-        CKContainer.defaultContainer().publicCloudDatabase.addOperation(operation)
+        CKContainer.default().publicCloudDatabase.add(operation)
     }
     
-    class func downloadVideoInBackGround(assetKey:String,recordID:CKRecordID,completion:(Bool!,path:String!)->Void){
+    class func downloadVideoInBackGround(_ assetKey:String,recordID:CKRecordID,completion:@escaping (Bool?,_ path:String?)->Void){
         let operation = CKFetchRecordsOperation(recordIDs: [recordID])
         
         operation.desiredKeys = [assetKey]
-        operation.qualityOfService = .UserInitiated
+        operation.qualityOfService = .userInitiated
         
         operation.perRecordCompletionBlock = {
             record,retrievedRecordID,error in
             if let _ = record{
-                let asset = record!.valueForKey(assetKey) as? CKAsset
+                let asset = record!.value(forKey: assetKey) as? CKAsset
                 if let _ = asset{
-                    let url = asset!.fileURL as NSURL!
-                    let videoData = NSData(contentsOfURL: url)
-                    let cachePath = NSSearchPathForDirectoriesInDomains(.CachesDirectory, .UserDomainMask, true)[0]
-                    let destination = cachePath.stringByAppendingString("video.mp4")
-                    NSFileManager.defaultManager().createFileAtPath(destination, contents: videoData, attributes: nil)
-                    completion(true,path: destination)
+                    let url = asset!.fileURL as URL!
+                    let videoData = try? Data(contentsOf: url!)
+                    let cachePath = NSSearchPathForDirectoriesInDomains(.cachesDirectory, .userDomainMask, true)[0]
+                    let destination = cachePath + "video.mp4"
+                    FileManager.default.createFile(atPath: destination, contents: videoData, attributes: nil)
+                    completion(true,destination)
                     
                     
                 }else{
-                    completion(false,path: nil)
+                    completion(false,nil)
                 }
             }else{
-                completion(false,path: nil)
+                completion(false,nil)
             }
         }
 
-        CKContainer.defaultContainer().publicCloudDatabase.addOperation(operation)
+        CKContainer.default().publicCloudDatabase.add(operation)
         
     }
 

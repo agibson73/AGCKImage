@@ -38,34 +38,34 @@ extension UIImageView{
         }
     }
 
-    func agCKImageAsset(recordID:CKRecordID,assetKey:String){
+    func agCKImageAsset(_ recordID:CKRecordID,assetKey:String){
         
         downloadAssetImage(nil, shouldRefresh: false, recordID: recordID, assetKey: assetKey, ckProgress: {progress,finished in})
     }
     
-    func agCKImageAssetWithPlaceHolder(recordID:CKRecordID,assetKey:String,placeHolder:UIImage?){
+    func agCKImageAssetWithPlaceHolder(_ recordID:CKRecordID,assetKey:String,placeHolder:UIImage?){
         downloadAssetImage(placeHolder, shouldRefresh: false, recordID: recordID, assetKey: assetKey, ckProgress: {progress,finished in})
     }
-    func agCKImageAssetWithResetCacheForID(recordID:CKRecordID,assetKey:String){
+    func agCKImageAssetWithResetCacheForID(_ recordID:CKRecordID,assetKey:String){
         downloadAssetImage(nil, shouldRefresh: true, recordID: recordID, assetKey: assetKey, ckProgress: {progress,finished in})
     }
     
 
-    func agCKImageAssetWithProgress(recordID:CKRecordID,assetKey:String,ckProgress:(progress:Double!,finished:Bool!)->Void){
+    func agCKImageAssetWithProgress(_ recordID:CKRecordID,assetKey:String,ckProgress:@escaping (_ progress:Double?,_ finished:Bool?)->Void){
         downloadAssetImage(nil, shouldRefresh: false, recordID: recordID, assetKey: assetKey, ckProgress: {progress,finished in
-            ckProgress(progress: progress, finished: finished)
+            ckProgress(progress, finished)
         })
        
     }
-    func agCKImageAssetWithProgressWithResetCacheForID(recordID:CKRecordID,assetKey:String,ckProgress:(progress:Double!,finished:Bool!)->Void){
+    func agCKImageAssetWithProgressWithResetCacheForID(_ recordID:CKRecordID,assetKey:String,ckProgress:@escaping (_ progress:Double?,_ finished:Bool?)->Void){
         downloadAssetImage(nil, shouldRefresh: true, recordID: recordID, assetKey: assetKey, ckProgress: {progress,finished in
-            ckProgress(progress: progress, finished: finished)
+            ckProgress(progress, finished)
         })
     }
     
 
     
-    private func downloadAssetImage(placeHolder:UIImage?,shouldRefresh:Bool,recordID:CKRecordID,assetKey:String,ckProgress:(progress:Double!,finished:Bool!)->Void){
+    fileprivate func downloadAssetImage(_ placeHolder:UIImage?,shouldRefresh:Bool,recordID:CKRecordID,assetKey:String,ckProgress:@escaping (_ progress:Double?,_ finished:Bool?)->Void){
         
         // cancel current operation
         self.cancelCurrentOperation()
@@ -89,35 +89,35 @@ extension UIImageView{
             operation.perRecordProgressBlock = {
                 record,progress in
                 internalProgress = progress
-                ckProgress(progress:progress,finished: false)
+                ckProgress(progress,false)
             }
             
             operation.perRecordCompletionBlock = {
                 record,recordID,error in
                 if let _ = record{
-                    let asset = record!.valueForKey(assetKey) as? CKAsset
+                    let asset = record!.value(forKey: assetKey) as? CKAsset
                     
                     if let _ = asset{
                         let url = asset!.fileURL
-                        let imageData = NSData(contentsOfFile: url.path!)!
+                        let imageData = try! Data(contentsOf: URL(fileURLWithPath: url.path))
                         let ckImage = UIImage(data: imageData)!
                         AGCKAssetCache.defaultManager.addAssetImageToCache(recordID!.recordName, image: ckImage)
-                        dispatch_async(dispatch_get_main_queue(), {
+                        DispatchQueue.main.async(execute: {
                             self.image = ckImage
                         })
                         
                     }
                     if error != nil{
-                        print(error)
+                        print(error!)
                     }
                 }
-                ckProgress(progress: internalProgress, finished: true)
+                ckProgress(internalProgress, true)
                 
             }
-            CKContainer.defaultContainer().publicCloudDatabase.addOperation(operation)
+            CKContainer.default().publicCloudDatabase.add(operation)
             self.operations = operation
         }else{
-            ckProgress(progress: 1.0, finished: true)
+            ckProgress(1.0, true)
             self.image = cacheImage
         }
     }

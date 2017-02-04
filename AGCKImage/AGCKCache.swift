@@ -21,16 +21,16 @@ THE SOFTWARE.
 */
 
 import Foundation
-extension NSCache {
+class AGCKCache: NSCache<AnyObject, AnyObject> {
     subscript(key: AnyObject) -> AnyObject? {
         get {
-            return objectForKey(key)
+            return object(forKey: key)
         }
         set {
             if let value: AnyObject = newValue {
                 setObject(value, forKey: key)
             } else {
-                removeObjectForKey(key)
+                removeObject(forKey: key)
             }
         }
     }
